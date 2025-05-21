@@ -1,29 +1,36 @@
-name: blockchain school first project
+name: block chain school 1st task
 
 on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      - name: Install dependencies
-        run: npm install
+      - name: Install deps
+        run: npm ci
 
-      - name: Compile contracts
+      - name: Compile
         run: npx hardhat compile
 
-      - name: Run tests
+      - name: Lint Solidity
+        run: npx solhint 'contracts/**/*.sol'
+
+      - name: Lint TypeScript
+        run: npx eslint .
+
+      - name: Run Tests
         run: npx hardhat test
+
+      - name: Slither Analysis
+        run: |
+          npm install -g slither-analyzer
+          slither . || true
