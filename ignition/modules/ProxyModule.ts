@@ -1,21 +1,30 @@
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
 
-const proxyModule = buildModule("ProxyModule", (m) => {
+const ProxyModule = buildModule("ProxyModule", (m) => {
   const proxyAdminOwner = m.getAccount(0);
+  console.log("admin owner qqqqqqqqqq", proxyAdminOwner);
+  const votingTime = m.getParameter("_timeToVote", 3600);
+  const changeVotingThreshold = m.getParameter("changeVotingThreshold", 1000);
+  const priceVotingThreshold = m.getParameter("priceVotingThreshold", 500);
 
-  const demo = m.contract("ScopeTwoToken");
-
-  const initCallData = m.call(demo, "initialize", [
-    3600,
-    1000,
-    500  
-  ]);
+  const token = m.contract("ScopeTwoToken");
 
   const proxy = m.contract("TransparentUpgradeableProxy", [
-    demo,
+    token,
     proxyAdminOwner,
-    initCallData,
+    "0x",
   ]);
+
+  const tokenProxy = m.contractAt("ScopeTwoToken", proxy, {
+    id: "ScopeTwoTokenProxy",
+  });
+
+  m.call(
+    tokenProxy,
+    "initialize",
+    [votingTime, changeVotingThreshold, priceVotingThreshold],
+    { from: proxyAdminOwner }
+  );
 
   const proxyAdminAddress = m.readEventArgument(
     proxy,
@@ -25,15 +34,7 @@ const proxyModule = buildModule("ProxyModule", (m) => {
 
   const proxyAdmin = m.contractAt("ProxyAdmin", proxyAdminAddress);
 
-  return { proxyAdmin, proxy };
+  return { proxy, proxyAdmin };
 });
 
-const scopeTwoTokenModule = buildModule("ScopeTwoTokenModule", (m) => {
-  const { proxy, proxyAdmin } = m.useModule(proxyModule);
-
-  const scopeTwoToken = m.contractAt("ScopeTwoToken", proxy);
-
-  return { scopeTwoToken, proxy, proxyAdmin };
-});
-
-export default scopeTwoTokenModule;
+export default ProxyModule;

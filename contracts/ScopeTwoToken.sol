@@ -2,8 +2,9 @@
 pragma solidity ^0.8.28;
 
 import "./ERC20.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
-contract ScopeTwoToken is ERC20 {
+contract ScopeTwoToken is ERC20, Initializable {
     address public _owner;
 
     uint256 private _currentPrice;
@@ -32,7 +33,7 @@ contract ScopeTwoToken is ERC20 {
 
     uint256 public leadingPrice;
 
-    function initialize(uint256 _timeToVote, uint256 changeVotingThreshold, uint256 priceVotingThreshold) public {
+    function initialize(uint256 _timeToVote, uint256 changeVotingThreshold, uint256 priceVotingThreshold) public initializer() {
         timeToVote = _timeToVote;
         _changeVotingThreshold = changeVotingThreshold;
         _priceVotingThreshold = priceVotingThreshold;
@@ -140,13 +141,13 @@ contract ScopeTwoToken is ERC20 {
         _currentPrice = price;
     }
 
-    function _mint(address to, uint256 amount) public override {
+    function _mint(address to, uint256 amount) private {
         _totalSupply += amount;
         _balances[to] += amount;
         emit Transfer(address(0), to, amount);
     }
 
-    function _burn(address from, uint256 amount) public override {
+    function _burn(address from, uint256 amount) private {
         require(_balances[from] >= amount, "Not enough tokens to burn");
         _balances[from] -= amount;
         _totalSupply -= amount;

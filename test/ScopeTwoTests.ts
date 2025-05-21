@@ -1,47 +1,44 @@
 import { expect } from "chai";
 import { ethers, network } from "hardhat";
 import { ignition } from "hardhat";
-import scopeTwoTokenModule from "../ignition/modules/ProxyModule";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
+import ScopeTwoTokenModule from "../ignition/modules/ScopeTwoTokenModule";
 
 describe("ScopeTwoToken", function () {
-
   async function deployScopeTwoToken() {
-    const [owner, addr1, addr2] = await ethers.getSigners();
+    const [, addr1, addr2] = await ethers.getSigners();
 
-    const { scopeTwoToken } = await ignition.deploy(scopeTwoTokenModule);
+    const { token } = await ignition.deploy(ScopeTwoTokenModule);
 
-    await scopeTwoToken.setInitialPrice(100);
+    await token.setInitialPrice(100);
 
-    return { token: scopeTwoToken, owner, addr1, addr2 };
+    return { token, addr1, addr2 };
   }
 
   describe("Voting", function () {
-
     it("vote for start price voting", async function () {
-
-      const { token, owner, addr1, addr2 } = await loadFixture(deployScopeTwoToken);
+      const { token, addr1, addr2 } = await loadFixture(deployScopeTwoToken);
 
       await token.connect(addr1)["vote(bool)"](true);
       await token.connect(addr2)["vote(bool)"](true);
 
-      await expect(token.endVoting())
-        .to.be.revertedWith("Voting is not active.");
+      await expect(token.endVoting()).to.be.revertedWith(
+        "Voting is not active."
+      );
 
-      expect(await token.votingActive())
-        .to.be.false;
+      expect(await token.votingActive()).to.be.false;
 
       await expect(token.startVoting())
         .to.emit(token, "VotingStarted")
         .withArgs(1);
 
-      await expect(token.endVoting())
-        .to.be.revertedWith("Voting time is not over.");
+      await expect(token.endVoting()).to.be.revertedWith(
+        "Voting time is not over."
+      );
     });
 
     it("startVoting sets voting start time, increments votingNumber, emits event", async function () {
-
-      const { token, owner, addr1, addr2 } = await loadFixture(deployScopeTwoToken);
+      const { token, addr1, addr2 } = await loadFixture(deployScopeTwoToken);
 
       await token.connect(addr1)["vote(bool)"](true);
       await token.connect(addr2)["vote(bool)"](true);
@@ -57,94 +54,99 @@ describe("ScopeTwoToken", function () {
     });
 
     it("vote should fail if balance < minTokenAmount (0.05%)", async function () {
-        
-      const { token, owner, addr1, addr2 } = await loadFixture(deployScopeTwoToken);
+      const { token, addr1, addr2 } = await loadFixture(deployScopeTwoToken);
 
       await token.connect(addr1)["vote(bool)"](true);
       await token.connect(addr2)["vote(bool)"](true);
 
       await token.startVoting();
 
-      await expect(token.connect(addr1)["vote(uint256)"](100)).to.be.revertedWith(
+      await expect(
+        token.connect(addr1)["vote(uint256)"](100)
+      ).to.be.revertedWith(
         "Price should be more than 0 and not be equal to the current one."
       );
 
-      await expect(token.connect(addr1)["vote(uint256)"](110)).to.be.revertedWith(
-        "Total supply is zero. No voting allowed."
-      );
+      await expect(
+        token.connect(addr1)["vote(uint256)"](110)
+      ).to.be.revertedWith("Total supply is zero. No voting allowed.");
 
-      await token.connect(addr2).buy({ value: ethers.parseEther('1') });
-      await token.connect(addr2).buy({ value: ethers.parseEther('1') });
-      await token.connect(addr2).buy({ value: ethers.parseEther('1') });
+      await token.connect(addr2).buy({ value: ethers.parseEther("1") });
+      await token.connect(addr2).buy({ value: ethers.parseEther("1") });
+      await token.connect(addr2).buy({ value: ethers.parseEther("1") });
 
-      await token.connect(addr1).buy({ value: ethers.parseEther('0.001') });
+      await token.connect(addr1).buy({ value: ethers.parseEther("0.001") });
 
-      console.log('balance 1: ', await token.connect(addr1).balanceOf(addr1));
-      console.log('balance 2: ', await token.connect(addr1).balanceOf(addr2));
+      console.log("balance 1: ", await token.connect(addr1).balanceOf(addr1));
+      console.log("balance 2: ", await token.connect(addr1).balanceOf(addr2));
 
       expect(await token.connect(addr1).balanceOf(addr1)).to.be.greaterThan(0);
 
-      await expect(token.connect(addr1)["vote(uint256)"](110)).to.be.revertedWith(
+      await expect(
+        token.connect(addr1)["vote(uint256)"](110)
+      ).to.be.revertedWith(
         "You cannot vote for token price as you dont have enough tokens."
       );
 
-      await token.connect(addr1).buy({ value: ethers.parseEther('1') });
+      await token.connect(addr1).buy({ value: ethers.parseEther("1") });
       await token.connect(addr1)["vote(uint256)"](110);
 
-      await expect(token.connect(addr1)["vote(uint256)"](110)).to.be.revertedWith(
-        "You have already voted for price."
-      );
+      await expect(
+        token.connect(addr1)["vote(uint256)"](110)
+      ).to.be.revertedWith("You have already voted for price.");
 
-      await expect(token.connect(addr1)["vote(uint256)"](120)).to.be.revertedWith(
-        "You have already voted for price."
-      );
+      await expect(
+        token.connect(addr1)["vote(uint256)"](120)
+      ).to.be.revertedWith("You have already voted for price.");
     });
 
     it("token transfers are blocked for voters during voting to prevent double voting with token transfers", async function () {
-        
-      const { token, owner, addr1, addr2 } = await loadFixture(deployScopeTwoToken);
+      const { token, addr1, addr2 } = await loadFixture(deployScopeTwoToken);
 
-        await token.connect(addr1)["vote(bool)"](true);
-        await token.connect(addr2)["vote(bool)"](true);
+      await token.connect(addr1)["vote(bool)"](true);
+      await token.connect(addr2)["vote(bool)"](true);
 
-        await token.startVoting();
+      await token.startVoting();
 
-        await token.connect(addr2).buy({ value: ethers.parseEther('1') });
-        await token.connect(addr2).buy({ value: ethers.parseEther('1') });
-        await token.connect(addr2).buy({ value: ethers.parseEther('1') });
+      await token.connect(addr2).buy({ value: ethers.parseEther("1") });
+      await token.connect(addr2).buy({ value: ethers.parseEther("1") });
+      await token.connect(addr2).buy({ value: ethers.parseEther("1") });
 
-        await token.connect(addr1).buy({ value: ethers.parseEther('1') });
+      await token.connect(addr1).buy({ value: ethers.parseEther("1") });
 
-        await token.connect(addr1)["vote(uint256)"](130);
+      await token.connect(addr1)["vote(uint256)"](130);
 
-        await expect(token.connect(addr1).transfer(addr2, 1)).to.be.revertedWith("You cannot transfer as you participate in a voting.");
+      await expect(token.connect(addr1).transfer(addr2, 1)).to.be.revertedWith(
+        "You cannot transfer as you participate in a voting."
+      );
     });
 
     it("endVoting should be callable only after timeToVote", async function () {
-        
-      const { token, owner, addr1, addr2 } = await loadFixture(deployScopeTwoToken);
+      const { token, addr1, addr2 } = await loadFixture(deployScopeTwoToken);
 
-        await token.connect(addr1)["vote(bool)"](true);
-        await token.connect(addr2)["vote(bool)"](true);
+      await token.connect(addr1)["vote(bool)"](true);
+      await token.connect(addr2)["vote(bool)"](true);
 
-        await token.startVoting();
+      await token.startVoting();
 
-        await token.connect(addr2).buy({ value: ethers.parseEther('1') });
-        await token.connect(addr2).buy({ value: ethers.parseEther('1') });
-        await token.connect(addr2).buy({ value: ethers.parseEther('1') });
+      await token.connect(addr2).buy({ value: ethers.parseEther("1") });
+      await token.connect(addr2).buy({ value: ethers.parseEther("1") });
+      await token.connect(addr2).buy({ value: ethers.parseEther("1") });
 
-        await token.connect(addr1).buy({ value: ethers.parseEther('1') });
+      await token.connect(addr1).buy({ value: ethers.parseEther("1") });
 
-        await token.connect(addr1)["vote(uint256)"](130);
+      await token.connect(addr1)["vote(uint256)"](130);
 
-        await expect(token.connect(addr2).endVoting()).to.be.revertedWith("Voting time is not over.");
+      await expect(token.connect(addr2).endVoting()).to.be.revertedWith(
+        "Voting time is not over."
+      );
 
-        await network.provider.send("evm_increaseTime", [3600]);
-        await network.provider.send("evm_mine");
+      await network.provider.send("evm_increaseTime", [3600]);
+      await network.provider.send("evm_mine");
 
-        await expect(token.connect(addr2).endVoting()).to.not.revertedWith("Voting time is not over.");
+      await expect(token.connect(addr2).endVoting()).to.not.revertedWith(
+        "Voting time is not over."
+      );
     });
-
   });
-
 });
