@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "prepare": "npx husky"
+    "prepare": "husky"
   },
   "lint-staged": {
     "**/*.{js,ts}": "eslint --fix",
