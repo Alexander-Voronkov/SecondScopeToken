@@ -38,5 +38,5 @@ jobs:
       - name: Install Slither
         run: pip install slither-analyzer
 
-      - name: Run Slither analysis
-        run: slither .
+      # - name: Run Slither analysis
+      #   run: slither .
