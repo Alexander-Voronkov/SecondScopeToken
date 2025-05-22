@@ -30,7 +30,13 @@ jobs:
       - name: Run Tests
         run: npx hardhat test
 
-      - name: Slither Analysis
-        run: |
-          npm install -g slither-analyzer
-          slither . || true
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install Slither
+        run: pip install slither-analyzer
+
+      - name: Run Slither analysis
+        run: slither .
