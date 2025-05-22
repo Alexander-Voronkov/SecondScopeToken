@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
 
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-
-// import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @title My erc20 realization
 /// @author Oleksandr Voronkov
@@ -23,7 +21,7 @@ contract ERC20 is IERC20 {
   }
 
   function transfer(address to, uint256 amount) public virtual override returns (bool) {
-    require(_balances[msg.sender] >= amount, 'Insufficient balance');
+    require(_balances[msg.sender] >= amount, "Insufficient balance");
     _balances[msg.sender] -= amount;
     _balances[to] += amount;
     emit Transfer(msg.sender, to, amount);
@@ -45,8 +43,8 @@ contract ERC20 is IERC20 {
     address to,
     uint256 amount
   ) public virtual override returns (bool) {
-    require(_balances[from] >= amount, 'Insufficient balance.');
-    require(_allowancesOwnerSpender[from][msg.sender] >= amount, 'Not allowed to spend this much.');
+    require(_balances[from] >= amount, "Insufficient balance.");
+    require(_allowancesOwnerSpender[from][msg.sender] >= amount, "Not allowed to spend this much.");
 
     _balances[from] -= amount;
     _balances[to] += amount;

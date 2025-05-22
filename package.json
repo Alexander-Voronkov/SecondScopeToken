@@ -1,9 +1,13 @@
 {
   "scripts": {
-    "prepare": "husky install"
+    "prepare": "npx husky"
   },
   "lint-staged": {
-    "**/*.{js,ts}": "eslint --fix"
+    "**/*.{js,ts}": "eslint --fix",
+    "*.sol": [
+      "prettier --write",
+      "npx solhint"
+    ]
   },
   "devDependencies": {
     "@eslint/js": "^9.27.0",
