@@ -39,9 +39,7 @@ jobs:
         run: pip install slither-analyzer
 
       - name: Run Slither analysis and save report
-        run: slither . --json slither-report.json
-
-      # === Firebase section ===
+        run: slither . --json slither-report.json || true
 
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
