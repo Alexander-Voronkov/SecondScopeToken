@@ -292,7 +292,7 @@ contract VulnerableScopeTwoToken is ERC20, Initializable, ReentrancyGuard {
     emit VulnerableTransfer(ethToReturn);
     (bool success, ) = msg.sender.call{ value: ethToReturn }("");
     require(success, "ETH transfer failed");
-    //_burn(msg.sender, tokensAmount);
+    _burn(msg.sender, tokensAmount);
   }
 
   /**

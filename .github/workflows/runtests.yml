@@ -46,6 +46,6 @@ jobs:
 
       - name: Upload Slither report to Firebase Storage
         run: |
-          firebase storage:upload slither-report.json --path "/slither-reports/slither-report-$(date +%s).json"
+          firebase storage:upload slither-report.json --path "/slither-reports/slither-report-$(date +%s).json" --token "$FIREBASE_TOKEN"
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
