@@ -3,6 +3,7 @@ import { ethers, network } from 'hardhat';
 import { ignition } from 'hardhat';
 import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers';
 import ScopeTwoTokenModule from '../ignition/modules/ScopeTwoTokenModule';
+import { ScopeTwoToken } from '../typechain-types';
 
 describe('ScopeTwoToken', function () {
   async function deployScopeTwoToken() {
@@ -10,9 +11,11 @@ describe('ScopeTwoToken', function () {
 
     const { token } = await ignition.deploy(ScopeTwoTokenModule);
 
-    await token.setInitialPrice(100);
+    const typedToken = token as unknown as ScopeTwoToken;
 
-    return { token, addr1, addr2 };
+    await typedToken.setInitialPrice(100);
+
+    return { token: typedToken, addr1, addr2 };
   }
 
   describe('Voting', function () {

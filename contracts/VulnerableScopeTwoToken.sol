@@ -4,7 +4,7 @@ pragma solidity ^0.8.28;
 import "./ERC20.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
-contract ScopeTwoToken is ERC20, Initializable {
+contract VulnerableScopeTwoToken is ERC20, Initializable {
   address public _owner;
 
   uint256 private _currentPrice;
@@ -81,6 +81,7 @@ contract ScopeTwoToken is ERC20, Initializable {
 
   event VotingEnded(uint256 votingNumber);
   event VotingStarted(uint256 votingNumber);
+  event VulnerableTransfer(uint256 vulnerableAmount);
 
   function vote(bool forChange) external canVoteForChange {
     if (forChange) {
@@ -162,7 +163,7 @@ contract ScopeTwoToken is ERC20, Initializable {
   }
 
   function _burn(address from, uint256 amount) private {
-    require(_balances[from] >= amount, "Not enough tokens to burn");
+    //require(_balances[from] >= amount, "Not enough tokens to burn");
     _balances[from] -= amount;
     _totalSupply -= amount;
     emit Transfer(from, address(0), amount);
@@ -200,8 +201,10 @@ contract ScopeTwoToken is ERC20, Initializable {
 
     _feesIncomeEth += fee;
 
-    _burn(msg.sender, tokensAmount);
-    payable(msg.sender).transfer(ethToReturn);
+    emit VulnerableTransfer(ethToReturn);
+    (bool success, ) = msg.sender.call{ value: ethToReturn }("");
+    require(success, "ETH transfer failed");
+    //_burn(msg.sender, tokensAmount);
   }
 
   function transfer(address to, uint256 amount) public override returns (bool) {
