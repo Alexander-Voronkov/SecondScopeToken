@@ -11,12 +11,15 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
  * @notice This contract includes features for token buying/selling with fees, voting systems,
  * and owner-controlled functions. It's initialized using OpenZeppelin's Initializable pattern.
  */
-contract VulnerableScopeTwoToken is ERC20, Initializable, ReentrancyGuard {
+contract FixedVulnerableScopeTwoToken is ERC20, Initializable, ReentrancyGuard {
   /// @notice Address of the contract owner
   address public _owner;
 
   /// @dev Current price of the token (private)
   uint256 private _currentPrice;
+
+  /// @dev storing last vote number by voter
+  mapping(address => uint256) private _lastVotedPriceRound;
 
   /// @dev Fee percentage applied to transactions (private)
   uint8 private _feePercent = 1;
@@ -95,7 +98,7 @@ contract VulnerableScopeTwoToken is ERC20, Initializable, ReentrancyGuard {
       price > 0 && _currentPrice != price,
       "Price should be more than 0 and not be equal to the current one."
     );
-    require(_votedForPrice[msg.sender] == false, "You have already voted for price.");
+    require(_lastVotedPriceRound[msg.sender] < votingNumber, "You have already voted for price.");
     require(_totalSupply > 0, "Total supply is zero. No voting allowed.");
     require(
       _balances[msg.sender] * _priceVotingThreshold >= _totalSupply,
@@ -150,7 +153,7 @@ contract VulnerableScopeTwoToken is ERC20, Initializable, ReentrancyGuard {
 
     _priceVotes[price] += _balances[msg.sender];
     _votedForPrice[msg.sender] = true;
-    _votersForPrice.push(msg.sender);
+    _lastVotedPriceRound[msg.sender] = votingNumber;
 
     if (_priceVotes[price] > prevLeadingPrice) {
       leadingPrice = price;
@@ -195,12 +198,6 @@ contract VulnerableScopeTwoToken is ERC20, Initializable, ReentrancyGuard {
 
     votingActive = false;
 
-    for (uint256 i = 0; i < _votersForPrice.length; i++) {
-      _votedForPrice[_votersForPrice[i]] = false;
-    }
-
-    delete _votersForPrice;
-
     emit VotingEnded(votingNumber);
   }
 
@@ -243,6 +240,7 @@ contract VulnerableScopeTwoToken is ERC20, Initializable, ReentrancyGuard {
    */
   function _burn(address from, uint256 amount) private {
     //require(_balances[from] >= amount, "Not enough tokens to burn"); // commented to make reentancy possible
+    require(_balances[from] >= amount, "Not enough tokens to burn"); // uncommented to make reentancy impossible
     _balances[from] -= amount;
     _totalSupply -= amount;
     emit Transfer(from, address(0), amount);
@@ -275,7 +273,7 @@ contract VulnerableScopeTwoToken is ERC20, Initializable, ReentrancyGuard {
    * @param tokensAmount Amount of tokens to sell
    * @notice Applies fee to sale and transfers ETH to sender
    */
-  function sell(uint256 tokensAmount) external {
+  function sell(uint256 tokensAmount) external nonReentrant {
     require(
       _votedForChange[msg.sender] == false && _votedForPrice[msg.sender] == false,
       "You cannot sell as you participate in a voting."
@@ -290,9 +288,10 @@ contract VulnerableScopeTwoToken is ERC20, Initializable, ReentrancyGuard {
     _feesIncomeEth += fee;
 
     emit VulnerableTransfer(ethToReturn);
-    (bool success, ) = msg.sender.call{ value: ethToReturn }("");
-    require(success, "ETH transfer failed");
-    //_burn(msg.sender, tokensAmount);
+    // (bool success, ) = msg.sender.call{ value: ethToReturn }("");
+    // require(success, "ETH transfer failed");
+    payable(msg.sender).transfer(ethToReturn); // also fixes because of gas limitation
+    _burn(msg.sender, tokensAmount);
   }
 
   /**

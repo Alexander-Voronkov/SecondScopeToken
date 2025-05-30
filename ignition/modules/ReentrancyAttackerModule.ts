@@ -1,12 +1,14 @@
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
-import vulerableTokenModule from "./VulnerableScopeTwoTokenModule";
+import VulerableTokenModule from "./VulnerableScopeTwoTokenModule";
+import FixedVulnerableScopeTwoTokenModule from "./FixedVulnerableScopeTwoTokenModule";
 
 const ReentrancyAttackerModule = buildModule("ReentrancyAttackerModule", (m) => {
-  const { vulnerableToken } = m.useModule(vulerableTokenModule);
+  const { vulnerableToken } = m.useModule(VulerableTokenModule);
+  const { fixedVulnerableToken } = m.useModule(FixedVulnerableScopeTwoTokenModule);
 
-  const attacker = m.contract("ReentrancyAttacker", [vulnerableToken]);
+  const attacker = m.contract("ReentrancyAttacker", [vulnerableToken, fixedVulnerableToken]);
 
-  return { attacker, vulnerableToken };
+  return { attacker, vulnerableToken, fixedVulnerableToken };
 });
 
 export default ReentrancyAttackerModule;
