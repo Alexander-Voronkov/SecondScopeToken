@@ -41,10 +41,15 @@ jobs:
       - name: Run Slither analysis and save report
         run: slither . --json slither-report.json || true
 
+      - name: Set timestamp
+        run: echo "TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)" >> $GITHUB_ENV
+        
       - uses: keithweaver/aws-s3-github-action@v1.0.0
         with:
           command: cp
           source: ./slither-report.json
-          destination: s3://${{secrets.VM_HOST}}/redduck/slither_latest_report${{ github.sha }}.json
+          destination: s3://redduck/slither_${{ env.TIMESTAMP }}_${{ github.sha }}.json
           aws_access_key_id: ${{ secrets.MINIO_ACCESS_KEY }}
           aws_secret_access_key: ${{ secrets.MINIO_SECRET_KEY }}
+          aws_region: us-east-1
+          flags: "--endpoint-url http://${{ secrets.VM_HOST }}"
