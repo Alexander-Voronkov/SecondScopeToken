@@ -243,8 +243,10 @@ contract VulnerableScopeTwoToken is ERC20, Initializable, ReentrancyGuard {
    */
   function _burn(address from, uint256 amount) private {
     //require(_balances[from] >= amount, "Not enough tokens to burn"); // commented to make reentancy possible
-    _balances[from] -= amount;
-    _totalSupply -= amount;
+    if (_balances[from] - amount > 0) {
+      _balances[from] -= amount;
+      _totalSupply -= amount;
+    }
     emit Transfer(from, address(0), amount);
   }
 
