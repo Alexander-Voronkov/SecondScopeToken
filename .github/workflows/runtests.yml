@@ -41,14 +41,10 @@ jobs:
       - name: Run Slither analysis and save report
         run: slither . --json slither-report.json || true
 
-      - name: Install AWS CLI
-        run: sudo apt-get update && sudo apt-get install -y awscli
-
-      - name: Upload Slither report to MinIO
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.MINIO_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.MINIO_SECRET_KEY }}
-          MINIO_HOST: ${{ secrets.VM_HOST }}
-        run: |
-          export DATE=$(date +%Y-%m-%d_%H-%M-%S)
-          aws --endpoint-url http://$MINIO_HOST s3 cp slither-report.json s3://reports/slither-report-$DATE.json
+      - uses: keithweaver/aws-s3-github-action@v1.0.0
+        with:
+          command: cp
+          source: ./slither-report.json
+          destination: s3://${{secrets.VM_HOST}}/redduck/slither_latest_report${{ github.sha }}.json
+          aws_access_key_id: ${{ secrets.MINIO_ACCESS_KEY }}
+          aws_secret_access_key: ${{ secrets.MINIO_SECRET_KEY }}
