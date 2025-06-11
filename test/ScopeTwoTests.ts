@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { ethers, network } from 'hardhat';
+import { ethers } from 'hardhat';
 import { ignition } from 'hardhat';
-import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers';
+import { loadFixture, time } from '@nomicfoundation/hardhat-toolbox/network-helpers';
 import ScopeTwoTokenModule from '../ignition/modules/ScopeTwoTokenModule';
 import { ScopeTwoToken } from '../typechain-types';
 
@@ -71,8 +71,8 @@ describe('ScopeTwoToken', function () {
 
       await token.connect(addr1).buy({ value: ethers.parseEther('0.001') });
 
-      console.log('balance 1: ', await token.connect(addr1).balanceOf(addr1));
-      console.log('balance 2: ', await token.connect(addr1).balanceOf(addr2));
+      console.log('balance 1: ', ethers.formatEther(await token.connect(addr1).balanceOf(addr1)), 'ETH');
+      console.log('balance 2: ', ethers.formatEther(await token.connect(addr1).balanceOf(addr2)), 'ETH');
 
       expect(await token.connect(addr1).balanceOf(addr1)).to.be.greaterThan(0);
 
@@ -131,8 +131,7 @@ describe('ScopeTwoToken', function () {
 
       await expect(token.connect(addr2).endVoting()).to.be.revertedWith('Voting time is not over.');
 
-      await network.provider.send('evm_increaseTime', [3600]);
-      await network.provider.send('evm_mine');
+      await time.increase(3600);
 
       await expect(token.connect(addr2).endVoting()).to.not.revertedWith(
         'Voting time is not over.',
