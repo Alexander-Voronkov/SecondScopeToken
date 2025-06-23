@@ -9,28 +9,17 @@ const VotingTransferableProxyModule = buildModule("VotingTransferableProxyModule
 
   const token = m.contract("ScopeTwoVotingTransferable");
 
-  const proxy = m.contract("TransparentUpgradeableProxy", [
-    token,
-    proxyAdminOwner,
-    "0x",
-  ]);
+  const proxy = m.contract("TransparentUpgradeableProxy", [token, proxyAdminOwner, "0x"]);
 
   const tokenProxy = m.contractAt("ScopeTwoVotingTransferable", proxy, {
     id: "ScopeTwoVotingTransferableProxy",
   });
 
-  m.call(
-    tokenProxy,
-    "initialize",
-    [votingTime, changeVotingThreshold, priceVotingThreshold],
-    { from: proxyAdminOwner }
-  );
+  m.call(tokenProxy, "initialize", [votingTime, changeVotingThreshold, priceVotingThreshold], {
+    from: proxyAdminOwner,
+  });
 
-  const proxyAdminAddress = m.readEventArgument(
-    proxy,
-    "AdminChanged",
-    "newAdmin"
-  );
+  const proxyAdminAddress = m.readEventArgument(proxy, "AdminChanged", "newAdmin");
 
   const proxyAdmin = m.contractAt("ProxyAdmin", proxyAdminAddress);
 

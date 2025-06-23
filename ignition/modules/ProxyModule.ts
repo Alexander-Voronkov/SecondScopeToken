@@ -9,28 +9,17 @@ const ProxyModule = buildModule("ProxyModule", (m) => {
 
   const token = m.contract("ScopeTwoToken");
 
-  const proxy = m.contract("TransparentUpgradeableProxy", [
-    token,
-    proxyAdminOwner,
-    "0x",
-  ]);
+  const proxy = m.contract("TransparentUpgradeableProxy", [token, proxyAdminOwner, "0x"]);
 
   const tokenProxy = m.contractAt("ScopeTwoToken", proxy, {
     id: "ScopeTwoTokenProxy",
   });
 
-  m.call(
-    tokenProxy,
-    "initialize",
-    [votingTime, changeVotingThreshold, priceVotingThreshold],
-    { from: proxyAdminOwner }
-  );
+  m.call(tokenProxy, "initialize", [votingTime, changeVotingThreshold, priceVotingThreshold], {
+    from: proxyAdminOwner,
+  });
 
-  const proxyAdminAddress = m.readEventArgument(
-    proxy,
-    "AdminChanged",
-    "newAdmin"
-  );
+  const proxyAdminAddress = m.readEventArgument(proxy, "AdminChanged", "newAdmin");
 
   const proxyAdmin = m.contractAt("ProxyAdmin", proxyAdminAddress);
 
